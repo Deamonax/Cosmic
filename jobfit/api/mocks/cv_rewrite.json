@@ -1,0 +1,14 @@
+{
+  "project_id": "demo-project",
+  "mode": "conservative",
+  "sections": [
+    {
+      "heading": "Professional Summary",
+      "content": "Frontend leader with a track record of delivering accessible web applications."
+    },
+    {
+      "heading": "Impact Snapshot",
+      "content": "Improved time to ship by 30 percent through component library adoption."
+    }
+  ]
+}
