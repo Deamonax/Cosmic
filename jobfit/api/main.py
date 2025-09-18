@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -9,11 +10,24 @@ from db import init_db
 from routers.core import router as core_router
 from routers.upload import router as upload_router
 
+DEFAULT_CORS_ORIGINS = ["http://localhost:3000"]
+
+
+def get_cors_origins() -> list[str]:
+    raw_origins = os.getenv("JOBFIT_CORS_ORIGINS")
+    if not raw_origins:
+        return DEFAULT_CORS_ORIGINS
+
+    parsed_origins = [origin.strip() for origin in raw_origins.split(",")]
+    origins = [origin for origin in parsed_origins if origin]
+    return origins or DEFAULT_CORS_ORIGINS
+
+
 app = FastAPI(title="JobFit API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=get_cors_origins(),
     allow_methods=["*"],
     allow_headers=["*"],
 )
