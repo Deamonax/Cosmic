@@ -1,0 +1,12 @@
+{
+  "questions": [
+    {
+      "question": "How do you approach accessibility testing for new components?",
+      "answer": "I run automated checks, manual keyboard reviews, and collaborate with design to confirm contrast."
+    },
+    {
+      "question": "What metrics do you track after launching a UI feature?",
+      "answer": "I monitor Core Web Vitals, funnel conversion, and error rates to ensure the change delivers measurable value."
+    }
+  ]
+}
