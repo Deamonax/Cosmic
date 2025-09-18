@@ -18,6 +18,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://jobfit:jobfit@db:5432/jobfit
       USE_LIVE_OPENAI: "false"
+      JOBFIT_CORS_ORIGINS: "http://localhost:3000"
     depends_on:
       - db
     ports:

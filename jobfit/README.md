@@ -36,6 +36,7 @@ Docker Compose sets the following key environment variables:
 - `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000` for the web container.
 - `DATABASE_URL=postgresql+psycopg://jobfit:jobfit@db:5432/jobfit` for the API container.
 - `POSTGRES_USER=jobfit`, `POSTGRES_PASSWORD=jobfit`, and `POSTGRES_DB=jobfit` for the database container.
+- `JOBFIT_CORS_ORIGINS=http://localhost:3000` for the API container. Provide a comma-separated list when multiple frontend origins need access.
 
 The backend exposes a feature flag in `api/config.py` named `USE_LIVE_OPENAI`. It defaults to `False` and is not used yet. All services currently rely on local mock JSON data.
 
