@@ -1,0 +1,38 @@
+{
+  "summary": "The role seeks an experienced frontend engineer who can lead React based feature delivery and collaborate closely with partners.",
+  "key_requirements": [
+    "7+ years building modern web apps",
+    "Expert knowledge of React and TypeScript",
+    "Strong communication with cross functional teams"
+  ],
+  "skills": [
+    {
+      "name": "React",
+      "importance": "high"
+    },
+    {
+      "name": "TypeScript",
+      "importance": "high"
+    },
+    {
+      "name": "Testing",
+      "importance": "medium"
+    }
+  ],
+  "sections": [
+    {
+      "title": "Role Highlights",
+      "bullets": [
+        "Lead UI architecture decisions for customer facing flows",
+        "Ship accessible features with measurable performance gains"
+      ]
+    },
+    {
+      "title": "Candidate Signals",
+      "bullets": [
+        "Experience mentoring engineers",
+        "History of collaborating with design partners"
+      ]
+    }
+  ]
+}
