@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
 
@@ -38,6 +39,12 @@ export default function HomePage() {
       <div className="rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-base">
         {status}
       </div>
+      <Link
+        href="/upload"
+        className="text-sm font-medium text-indigo-400 hover:text-indigo-300"
+      >
+        Upload candidate context
+      </Link>
     </main>
   );
 }
