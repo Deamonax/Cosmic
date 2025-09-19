@@ -1,8 +1,8 @@
 ﻿from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Dict, List
-import re
 
 # -------- PDF -> text -------------------------------------------------
 
@@ -64,63 +64,70 @@ def split_transcript(text: str) -> List[str]:
 BULLET_MARKERS = ("•", "-", "–", "*", "·")
 END_PUNCT = re.compile(r"[.!?…]$")
 
+
+def _is_bullet_line(ln: str) -> bool:
+    s = ln.lstrip()
+    return s[:1] in BULLET_MARKERS or bool(re.match(r"^[\-\*\u2022•·]\s+", s))
+
+
 def _normalize_lines(text: str) -> List[str]:
-    """
-    Normalize odd spacing from PDFs and join mid-sentence hard wraps.
-    """
+    """Normalize odd spacing from PDFs while keeping headings/bullets separate."""
+
     t = text.replace("\r\n", "\n").replace("\r", "\n")
     t = re.sub(r"[ \t]+", " ", t)
-    lines = [ln.strip() for ln in t.split("\n")]
+    raw_lines = t.split("\n")
+
     out: List[str] = []
     buf = ""
-    for ln in lines:
+
+    for raw in raw_lines:
+        ln = raw.strip()
         if not ln:
             if buf:
                 out.append(buf.strip())
                 buf = ""
-            out.append("")  # keep blank line as a boundary
+            out.append("")
             continue
+
+        if _is_bullet_line(ln):
+            if buf:
+                out.append(buf.strip())
+                buf = ""
+            out.append(ln)
+            continue
+
         if buf:
-            # If previous line ends a sentence or current line starts uppercase, break
-            if END_PUNCT.search(buf) or ln[:1].isupper():
+            starts_upper = ln[:1].isupper()
+            if END_PUNCT.search(buf) or (starts_upper and not buf.endswith(":")):
                 out.append(buf.strip())
                 buf = ln
             else:
                 buf += " " + ln
         else:
             buf = ln
+
     if buf:
         out.append(buf.strip())
-    return out
 
-def _is_bullet_line(ln: str) -> bool:
-    s = ln.lstrip()
-    return s[:1] in BULLET_MARKERS or bool(re.match(r"^[\-\*\u2022•·]\s+", s))
+    return out
 
 def _strip_bullet_prefix(s: str) -> str:
     return re.sub(r"^([\-\*\u2022•·]|–)\s*", "", s).strip()
 
-def _looks_like_fragment(s: str) -> bool:
-    """
-    Heuristic: a fragment is very short, has no ending punctuation,
-    and is typically 1–3 words (this is what happens with 'every word bullet' PDFs).
-    """
-    if not s:
-        return False
-    if END_PUNCT.search(s):
-        return False
-    # treat emails/phones/domains as single tokens to keep them intact
-    if re.search(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+", s):
-        return True
-    words = s.split()
-    return len(words) <= 3 and len(s) <= 20
+
+def _combine_parts(parts: List[str]) -> str:
+    text = " ".join(parts)
+    text = re.sub(r"\s*\|\s*", " | ", text)
+    text = re.sub(r"\s*\/\s*", " / ", text)
+    text = re.sub(r"\s{2,}", " ", text)
+    return text.strip()
 
 def split_cv(text: str) -> Dict[str, List[Dict[str, List[str]]]]:
     """
     Heuristic CV splitter for a quick on-screen preview:
       - Detects common section headings
-      - Groups bullet lines
-      - **Merges 'per-word bullets'** into a single bullet using a fragment accumulator
+      - Groups bullet lines and their wrapped fragments together
+      - Keeps short skill lists as separate bullets
     """
     lines = _normalize_lines(text)
 
@@ -135,35 +142,37 @@ def split_cv(text: str) -> Dict[str, List[Dict[str, List[str]]]]:
     current = {"name": "Summary", "bullets": []}
     buffer: List[str] = []
 
-    # Accumulate tiny fragments like: "Product" "Executive" "|" "Data-Driven" ...
-    frag_acc: List[str] = []
-
-    def flush_frag_acc():
-        """Join accumulated fragments into one bullet."""
-        nonlocal frag_acc
-        if frag_acc:
-            joined = " ".join(frag_acc)
-            # normalize stray spaces around pipes and punctuation
-            joined = re.sub(r"\s*\|\s*", " | ", joined)
-            joined = re.sub(r"\s{2,}", " ", joined).strip()
-            if joined:
-                current["bullets"].append(joined)
-            frag_acc = []
-
     def flush_buffer_as_bullets():
         nonlocal buffer
         if not buffer:
             return
+        parts: List[str] = []
         for ln in buffer:
-            s = _strip_bullet_prefix(ln)
-            if _looks_like_fragment(s):
-                frag_acc.append(s)
+            stripped = ln.strip()
+            is_bullet = _is_bullet_line(stripped)
+            text = _strip_bullet_prefix(stripped)
+            if is_bullet:
+                if parts:
+                    combined = _combine_parts(parts)
+                    if combined:
+                        current["bullets"].append(combined)
+                parts = [text] if text else []
+                continue
+
+            if not text:
+                continue
+
+            if parts:
+                parts.append(text)
             else:
-                flush_frag_acc()
-                if s:
-                    current["bullets"].append(s)
+                parts = [text]
+
+        if parts:
+            combined = _combine_parts(parts)
+            if combined:
+                current["bullets"].append(combined)
+
         buffer = []
-        flush_frag_acc()
 
     for ln in lines:
         stripped = ln.strip()
