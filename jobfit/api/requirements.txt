@@ -6,4 +6,5 @@ psycopg[binary]==3.2.1
 pypdf==4.3.1
 python-docx==1.1.2
 python-multipart==0.0.9
+httpx==0.27.2
 # If you plan to parse PDFs with images later, you can add: pymupdf==1.24.10
