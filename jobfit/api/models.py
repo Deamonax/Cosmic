@@ -27,7 +27,7 @@ class Source(Base):
     candidate_id: Mapped[str] = mapped_column(String(255), nullable=False)
     type: Mapped[str] = mapped_column(String(32), nullable=False)
     filename: Mapped[str] = mapped_column(String(512), nullable=False)
-    path: Mapped[Optional[str]] = mapped_column(String(1024))
+    path: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
     mimetype: Mapped[Optional[str]] = mapped_column(String(255))
     bytes: Mapped[int] = mapped_column(Integer, nullable=False)
     checksum: Mapped[str] = mapped_column(String(128), nullable=False)

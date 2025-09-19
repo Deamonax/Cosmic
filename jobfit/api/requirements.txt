@@ -1,8 +1,9 @@
-fastapi==0.110.0
-uvicorn[standard]==0.29.0
-pydantic==2.6.4
-SQLAlchemy==2.0.27
-psycopg[binary]==3.1.18
-pypdf==4.2.0
-python-docx==1.1.0
-pytest==8.1.1
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pydantic==2.9.2
+SQLAlchemy==2.0.35
+psycopg[binary]==3.2.1
+pypdf==4.3.1
+python-docx==1.1.2
+python-multipart==0.0.9
+# If you plan to parse PDFs with images later, you can add: pymupdf==1.24.10

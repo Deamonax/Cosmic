@@ -114,9 +114,9 @@ def extract_text(path: Path, mimetype: str, raw_bytes: bytes) -> str:
 
 @router.post("/cv", response_model=CVUploadResponse)
 async def upload_cv(
-    cv_file: Annotated[UploadFile, File(...)],
-    candidate_id: Annotated[str, Form("demo")] = "demo",
     session: SessionDep,
+    cv_file: Annotated[UploadFile, File()],          # required, no default here
+    candidate_id: Annotated[str, Form()] = "demo",   # default goes after '='
 ):
     if cv_file.content_type not in ALLOWED_CV_MIME_TYPES:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported CV file type")
@@ -174,10 +174,10 @@ async def upload_cv(
 
 @router.post("/context", response_model=ContextUploadResponse)
 async def upload_context(
-    transcripts: Annotated[list[UploadFile] | None, File(default=None)] = None,
-    notes: Annotated[str | None, Form(default=None)] = None,
-    candidate_id: Annotated[str, Form("demo")] = "demo",
     session: SessionDep,
+    transcripts: Annotated[list[UploadFile], File()] | None = None,  # default after '='
+    notes: Annotated[str, Form()] | None = None,                     # default after '='
+    candidate_id: Annotated[str, Form()] = "demo",
 ):
     files = transcripts or []
     text_note = (notes or "").strip()
@@ -265,8 +265,9 @@ async def upload_context(
 
 @router.get("/sources", response_model=SourceListResponse)
 async def list_sources(
-    candidate_id: str = "demo",
     session: SessionDep,
+    candidate_id: str = "demo",
+    
 ):
     statement = (
         select(Source, func.count(Chunk.id))

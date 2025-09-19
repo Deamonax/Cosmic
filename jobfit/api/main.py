@@ -1,3 +1,4 @@
+# api/main.py
 import os
 from pathlib import Path
 
@@ -10,48 +11,42 @@ from db import init_db
 from routers.core import router as core_router
 from routers.upload import router as upload_router
 
-DEFAULT_CORS_ORIGINS = ["http://localhost:3000"]
-
+DEFAULT_CORS_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
 def get_cors_origins() -> list[str]:
-    raw_origins = os.getenv("JOBFIT_CORS_ORIGINS")
-    if not raw_origins:
+    raw = os.getenv("JOBFIT_CORS_ORIGINS")
+    if not raw:
         return DEFAULT_CORS_ORIGINS
-
-    parsed_origins = [origin.strip() for origin in raw_origins.split(",")]
-    origins = [origin for origin in parsed_origins if origin]
-    return origins or DEFAULT_CORS_ORIGINS
-
+    vals = [v.strip() for v in raw.split(",")]
+    return [v for v in vals if v] or DEFAULT_CORS_ORIGINS
 
 app = FastAPI(title="JobFit API")
 
+# CORS, make local dev permissive
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_cors_origins(),
+    allow_origin_regex=r"^http://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_credentials=False,
 )
-
 
 STORAGE_DIR = Path(__file__).resolve().parent / "storage"
 
-
 @app.on_event("startup")
 def ensure_storage_and_tables() -> None:
+    print("CORS allow_origins:", get_cors_origins(), flush=True)
     STORAGE_DIR.mkdir(parents=True, exist_ok=True)
     init_db()
 
+@app.get("/healthz")
+def healthz():
+    return {"ok": True}
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    return JSONResponse(
-        status_code=400,
-        content={
-            "message": "Invalid request payload",
-            "errors": exc.errors(),
-        },
-    )
-
+    return JSONResponse(status_code=400, content={"message": "Invalid request payload", "errors": exc.errors()})
 
 app.include_router(core_router)
 app.include_router(upload_router, prefix="/upload")
