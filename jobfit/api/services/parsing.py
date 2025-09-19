@@ -64,6 +64,9 @@ def split_transcript(text: str) -> List[str]:
 BULLET_MARKERS = ("•", "-", "–", "*", "·")
 END_PUNCT = re.compile(r"[.!?…]$")
 
+INLINE_BULLET_CHARS = "".join(ch for ch in BULLET_MARKERS if ch != "-")
+INLINE_BULLET_PATTERN = re.compile(rf"\s*[{re.escape(INLINE_BULLET_CHARS)}]\s*")
+
 
 def _is_bullet_line(ln: str) -> bool:
     s = ln.lstrip()
@@ -122,6 +125,65 @@ def _combine_parts(parts: List[str]) -> str:
     text = re.sub(r"\s{2,}", " ", text)
     return text.strip()
 
+
+def _split_inline_segments(segments: List[str]) -> List[str]:
+    bullets: List[str] = []
+    current: List[str] = []
+
+    def flush() -> None:
+        if not current:
+            return
+        combined = _combine_parts(current)
+        if combined:
+            bullets.append(combined)
+        current.clear()
+
+    for index, segment in enumerate(segments):
+        if not segment:
+            continue
+        if segment == "|":
+            flush()
+            continue
+
+        current.append(segment)
+
+        next_segment = segments[index + 1] if index + 1 < len(segments) else None
+        if not next_segment:
+            continue
+        if next_segment == "|":
+            flush()
+            continue
+        if len(current) >= 2:
+            last = current[-1]
+            if last[:1].isupper() and next_segment[:1].isupper():
+                flush()
+
+    flush()
+    return bullets
+
+
+def _normalize_bullet_text(text: str) -> List[str]:
+    cleaned = text.strip()
+    if not cleaned:
+        return []
+
+    if INLINE_BULLET_PATTERN.search(cleaned):
+        segments = [segment.strip() for segment in INLINE_BULLET_PATTERN.split(cleaned) if segment.strip()]
+        split_segments = _split_inline_segments(segments)
+        if len(split_segments) >= 2:
+            return split_segments
+        if segments:
+            cleaned = " ".join(segments)
+        cleaned = INLINE_BULLET_PATTERN.sub(" ", cleaned)
+
+    cleaned = re.sub(r"\s{2,}", " ", cleaned).strip()
+    return [cleaned] if cleaned else []
+
+
+def _append_bullet(target: List[str], text: str) -> None:
+    for bullet in _normalize_bullet_text(text):
+        target.append(bullet)
+
 def split_cv(text: str) -> Dict[str, List[Dict[str, List[str]]]]:
     """
     Heuristic CV splitter for a quick on-screen preview:
@@ -155,7 +217,7 @@ def split_cv(text: str) -> Dict[str, List[Dict[str, List[str]]]]:
                 if parts:
                     combined = _combine_parts(parts)
                     if combined:
-                        current["bullets"].append(combined)
+                        _append_bullet(current["bullets"], combined)
                 parts = [text] if text else []
                 continue
 
@@ -170,7 +232,7 @@ def split_cv(text: str) -> Dict[str, List[Dict[str, List[str]]]]:
         if parts:
             combined = _combine_parts(parts)
             if combined:
-                current["bullets"].append(combined)
+                _append_bullet(current["bullets"], combined)
 
         buffer = []
 
@@ -200,7 +262,7 @@ def split_cv(text: str) -> Dict[str, List[Dict[str, List[str]]]]:
         s = stripped
         if len(s) > 40 or END_PUNCT.search(s):
             flush_buffer_as_bullets()
-            current["bullets"].append(s)
+            _append_bullet(current["bullets"], s)
         else:
             buffer.append(stripped)
 

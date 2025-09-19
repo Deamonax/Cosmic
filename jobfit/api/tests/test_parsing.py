@@ -37,3 +37,21 @@ def test_split_cv_keeps_distinct_skill_bullets():
     assert preview["sections"]
     skills = preview["sections"][0]
     assert skills["bullets"] == ["Python", "SQL", "AWS"]
+
+
+def test_split_cv_cleans_inline_bullet_markers():
+    text = "\n".join([
+        "Summary",
+        "• Jaron • Seijffers • Product • Executive • | • Data-Driven • Strategy",
+    ])
+
+    preview = split_cv(text)
+
+    assert preview["sections"]
+    summary = preview["sections"][0]
+    assert summary["name"].lower().startswith("summary")
+    assert summary["bullets"] == [
+        "Jaron Seijffers",
+        "Product Executive",
+        "Data-Driven Strategy",
+    ]

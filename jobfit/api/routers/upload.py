@@ -175,9 +175,9 @@ async def upload_cv(
 @router.post("/context", response_model=ContextUploadResponse)
 async def upload_context(
     session: SessionDep,
-    transcripts: Annotated[list[UploadFile], File()] | None = None,  # default after '='
-    notes: Annotated[str, Form()] | None = None,                     # default after '='
-    candidate_id: Annotated[str, Form()] = "demo",
+    transcripts: Annotated[list[UploadFile] | None, File()] = File(default=None),
+    notes: Annotated[str | None, Form()] = Form(default=None),
+    candidate_id: Annotated[str, Form()] = Form(default="demo"),
 ):
     files = transcripts or []
     text_note = (notes or "").strip()

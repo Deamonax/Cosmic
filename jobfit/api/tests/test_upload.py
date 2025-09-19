@@ -58,6 +58,19 @@ def test_upload_transcript_text_file():
     assert body["paragraph_counts"][0] > 0
 
 
+def test_upload_context_with_notes_only():
+    response = client.post(
+        "/upload/context",
+        data={"candidate_id": "demo", "notes": "Follow up soon."},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["saved"] is True
+    assert body["sources"]
+    assert body["sources"][0]["filename"] == "notes.txt"
+    assert body["paragraph_counts"] == [1]
+
+
 def test_upload_rejects_invalid_mimetype():
     files = {"cv_file": ("image.png", b"fake", "image/png")}
     response = client.post("/upload/cv", files=files)
