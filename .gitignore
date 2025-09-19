@@ -1,0 +1,22 @@
+﻿# Node / Next
+node_modules/
+.next/
+**/node_modules/
+**/.next/
+npm-debug.log*
+yarn-error.log*
+pnpm-lock.yaml
+package-lock.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# App-specific
+jobfit/api/storage/
+jobfit/web/storage/
+
+# Env
+.env
+.env.*
