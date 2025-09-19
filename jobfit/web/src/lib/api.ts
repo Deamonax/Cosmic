@@ -6,6 +6,30 @@ export type FetchOptions = RequestInit & {
 
 const defaultBaseUrl = "http://localhost:8000";
 
+function isLocalHostname(hostname: string | undefined | null): boolean {
+  if (!hostname) return false;
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
+}
+
+function resolveBaseUrl(): string {
+  const envBase = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
+  if (envBase) {
+    return envBase;
+  }
+
+  if (typeof window !== "undefined") {
+    const { origin, hostname } = window.location ?? {};
+    if (origin && origin !== "null") {
+      const shouldUseOrigin = process.env.NODE_ENV === "production" || !isLocalHostname(hostname);
+      if (shouldUseOrigin) {
+        return origin;
+      }
+    }
+  }
+
+  return defaultBaseUrl;
+}
+
 function joinUrl(base: string, path: string) {
   const b = base.replace(/\/$/, "");
   const p = path.startsWith("/") ? path : `/${path}`;
@@ -26,7 +50,7 @@ export async function apiFetch<T = unknown>(
   path: string,
   options: FetchOptions = {}
 ): Promise<T> {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? defaultBaseUrl;
+  const baseUrl = resolveBaseUrl();
   const url = joinUrl(baseUrl, path);
 
   const {
@@ -57,7 +81,8 @@ export async function apiFetch<T = unknown>(
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`API ${res.status} ${res.statusText} at ${url}. ${text}`);
+    const detail = text.trim() || res.statusText || "Unknown error";
+    throw new Error(`Request to ${url} failed with status ${res.status}: ${detail}`);
   }
 
   if (!parseJson) return undefined as unknown as T;
@@ -72,7 +97,7 @@ export async function postForm<T = unknown>(
   formData: FormData,
   timeoutMs = 60_000
 ): Promise<T> {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? defaultBaseUrl;
+  const baseUrl = resolveBaseUrl();
   const url = joinUrl(baseUrl, path);
 
   const res = await fetchWithTimeout(
